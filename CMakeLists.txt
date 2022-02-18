@@ -17,5 +17,8 @@ enable_testing()
 add_executable(utils_test utils.cc utils_test.cc)
 target_link_libraries(utils_test gtest_main)
 
+add_executable(median_of_two_arrays_test probs/median-of-two-sorted-arrays/main.cc probs/median-of-two-sorted-arrays/main_test.cc)
+target_link_libraries(median_of_two_arrays_test gtest_main)
+
 include(GoogleTest)
-gtest_discover_tests(utils_test)
+gtest_discover_tests(utils_test median_of_two_arrays_test)
