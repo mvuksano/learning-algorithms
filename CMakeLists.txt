@@ -11,7 +11,15 @@ FetchContent_Declare(
 	GIT_REPOSITORY https://github.com/google/googletest.git
 	GIT_TAG main
 )
-FetchContent_MakeAvailable(googletest)
+FetchContent_Declare(
+	glog
+	GIT_REPOSITORY https://github.com/google/glog.git
+	GIT_TAG master
+)
+FetchContent_MakeAvailable(glog googletest)
+
+add_executable(bench bench/main.cc)
+target_link_libraries(bench glog::glog)
 
 enable_testing()
 add_executable(utils_test utils.cc utils_test.cc)
