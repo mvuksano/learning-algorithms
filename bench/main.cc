@@ -13,15 +13,16 @@
       : "=d"(hi), "=a"(lo))
 
 DEFINE_string(output, "", "Filename where to store output of this run.");
+DEFINE_int32(mem_size, 16, "Amount of memory to allocate for benchmarking.");
 
-double __attribute__((optimize("O0"))) fn(uint32_t repeat, uint64_t size) {
+double __attribute__((optimize("O0")))
+fn(int *a, uint64_t repeat, uint64_t size) {
   uint32_t start_time_hi = 0, start_time_lo = 0, end_time_hi = 0,
            end_time_lo = 0;
   uint64_t start = 0, end = 0;
 
-  int *a = (int *)malloc(size * sizeof(int));
   TIME_IT(start_time_hi, start_time_lo);
-  for (uint32_t i = 0; i < repeat; i++) {
+  for (uint64_t i = 0; i < repeat; i++) {
     for (uint64_t j = 0; j < size; j++) {
       a[j] = a[j] + 1;
     }
@@ -55,20 +56,27 @@ int main(int argc, char **argv) {
               << " file.";
   }
 
-  int upper_bound = 30;
+  int upper_bound = FLAGS_mem_size;
   for (int i = 2; i < upper_bound; i++) {
-    buckets.push_back({i, std::pow(2, i)});
+    buckets.push_back({i, std::pow((double)2, i)});
   }
+
+  size_t max_size = buckets.back().second;
+  auto array_size = max_size * sizeof(int);
+  LOG(INFO) << "Allocating array of size: " << array_size << " bytes.";
+  int *a = (int *)malloc(array_size);
 
   uint64_t run_number_of_times = ((uint64_t)buckets.back().second) * 3;
   LOG(INFO) << "Will run loop " << run_number_of_times << " times.";
   std::for_each(buckets.cbegin(), buckets.cend(), [&](auto el) {
-    LOG(INFO) << "Measuring bucket 2^" << el.first << "(" << el.second
-              << " bytes)";
-    uint32_t repeat = run_number_of_times / el.second;
+    LOG(INFO) << "Measuring bucket with 2^" << el.first << "(" << el.second
+              << ") elements.";
+    uint64_t repeat = run_number_of_times / el.second;
     LOG(INFO) << "Repeating measurement " << repeat << " times.";
-    results.push_back({el.first, fn(repeat, el.second)});
+    results.push_back({el.first, fn(a, repeat, el.second)});
   });
+
+  free(a);
 
   if (FLAGS_output != "") {
     LOG(INFO) << "Storing results into " << FLAGS_output;
